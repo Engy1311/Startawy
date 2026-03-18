@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import { Link, useNavigate } from "react-router";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Lock, Mail, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import loginImage from "../../assets/c5dab0982181ba976c789e924259b1da6cc1ec63.png";
 import { useLoginStore } from "../store/useAuthStore";
@@ -9,33 +10,34 @@ import { useThemeStore } from "../store/useThemeStore";
 
 export function Login() {
   const { showToast } = useContext(SnackBarContext);
-  const navigate = useNavigate();
+  const router = useRouter();
   const { isDarkMode, toggleTheme } = useThemeStore();
 
   const {
     formData,
     formErrors,
     showPassword,
+    isLoading,
+    apiError,
     handleChange,
     validate,
     setFormErrors,
     setIsSubmit,
     setShowPassword,
     resetForm,
+    submitLogin,
   } = useLoginStore();
 
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors = validate();
-    setFormErrors(errors);
-    setIsSubmit(true);
-    if (Object.keys(errors).length === 0) {
-      console.log("Form submitted successfully:", formData);
+    const success = await submitLogin();
+    
+    if (success) {
       showToast("Login successful");
-      // Mock login - navigate to role switcher
-      navigate("/admin/dashboard");
+      // MOCK Navigation, can check token/role
+      router.push("/admin/dashboard");
       resetForm();
     }
   };
@@ -153,12 +155,26 @@ export function Login() {
                 </Link>
               </div>
 
+              {apiError && (
+                <div className="bg-red-50 dark:bg-red-900/30 text-red-500 border border-red-200 dark:border-red-800 p-3 rounded-lg text-sm mb-4">
+                  {apiError}
+                </div>
+              )}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all shadow-lg"
+                disabled={isLoading}
+                className="w-full relative flex items-center justify-center bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Sign In
+                {isLoading ? (
+                  <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  "Sign In"
+                )}
               </button>
             </form>
 
