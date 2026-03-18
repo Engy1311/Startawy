@@ -1,11 +1,19 @@
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { Target, Send, Edit, Trash2, Plus, Calendar, User, TrendingUp } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router";
+import { useRecommendationStore } from "../../store/useRecommendationStore";
 
 export default function Recommendations() {
-  const [showNewRecommendation, setShowNewRecommendation] = useState(false);
+  const {
+    formData,
+    showNewForm,
+    isSubmitting,
+    setFormField,
+    setShowNewForm,
+    submitRecommendation,
+    resetForm,
+  } = useRecommendationStore();
   
   const recommendations = [
     {
@@ -109,6 +117,11 @@ export default function Recommendations() {
     }
   };
 
+  const handleCreate = async () => {
+    await submitRecommendation();
+    resetForm();
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar userRole="consultant" />
@@ -123,7 +136,7 @@ export default function Recommendations() {
               <p className="text-gray-600">Create and manage strategic recommendations for your clients</p>
             </div>
             <button 
-              onClick={() => setShowNewRecommendation(!showNewRecommendation)}
+              onClick={() => setShowNewForm(!showNewForm)}
               className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
@@ -170,8 +183,8 @@ export default function Recommendations() {
           </div>
 
           {/* New Recommendation Form */}
-          {showNewRecommendation && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          {showNewForm && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 transform animate-slideUp">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Create New Recommendation</h3>
               
               <div className="space-y-4">
@@ -180,11 +193,15 @@ export default function Recommendations() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Client Name
                     </label>
-                    <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                      <option>Select client...</option>
-                      <option>John Doe - TechStart Inc.</option>
-                      <option>Sarah Miller - HealthTech Solutions</option>
-                      <option>Michael Brown - EcoStart</option>
+                    <select 
+                      value={formData.clientName}
+                      onChange={(e) => setFormField("clientName", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                      <option value="">Select client...</option>
+                      <option value="John Doe">John Doe - TechStart Inc.</option>
+                      <option value="Sarah Miller">Sarah Miller - HealthTech Solutions</option>
+                      <option value="Michael Brown">Michael Brown - EcoStart</option>
                     </select>
                   </div>
 
@@ -192,7 +209,11 @@ export default function Recommendations() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Category
                     </label>
-                    <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <select 
+                      value={formData.category}
+                      onChange={(e) => setFormField("category", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
                       <option>Financial Strategy</option>
                       <option>Investment Planning</option>
                       <option>Business Strategy</option>
@@ -209,6 +230,8 @@ export default function Recommendations() {
                     </label>
                     <input
                       type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormField("title", e.target.value)}
                       placeholder="e.g., Financial Restructuring Plan"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     />
@@ -218,10 +241,14 @@ export default function Recommendations() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Priority
                     </label>
-                    <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                      <option>High</option>
-                      <option>Medium</option>
-                      <option>Low</option>
+                    <select 
+                      value={formData.priority}
+                      onChange={(e) => setFormField("priority", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
                     </select>
                   </div>
                 </div>
@@ -232,6 +259,8 @@ export default function Recommendations() {
                   </label>
                   <textarea
                     rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormField("description", e.target.value)}
                     placeholder="Provide detailed recommendations and action items..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
@@ -239,14 +268,21 @@ export default function Recommendations() {
 
                 <div className="flex justify-end gap-3">
                   <button 
-                    onClick={() => setShowNewRecommendation(false)}
+                    onClick={() => {
+                        setShowNewForm(false);
+                        resetForm();
+                    }}
                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
                   >
                     Cancel
                   </button>
-                  <button className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold flex items-center gap-2">
+                  <button 
+                    onClick={handleCreate}
+                    disabled={isSubmitting || !formData.title || !formData.clientName}
+                    className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold flex items-center gap-2 disabled:opacity-50"
+                  >
                     <Send className="w-5 h-5" />
-                    Send Recommendation
+                    {isSubmitting ? "Sending..." : "Send Recommendation"}
                   </button>
                 </div>
               </div>
@@ -310,6 +346,16 @@ export default function Recommendations() {
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

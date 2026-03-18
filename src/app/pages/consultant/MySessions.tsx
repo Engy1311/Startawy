@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { Calendar, Clock, Video, CheckCircle, AlertCircle, XCircle, X } from "lucide-react";
-import { useSessionStore } from "../../store/useButtonsStore";
+import { useSessionStore } from "../../store/useSessionsStore";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 
 export default function MySessions() {

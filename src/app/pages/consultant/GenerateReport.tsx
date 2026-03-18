@@ -1,37 +1,35 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { ArrowLeft, FileText, Download, Check, Calendar, User, TrendingUp, DollarSign, Target } from "lucide-react";
+import { ArrowLeft, FileText, Check, Calendar, User, TrendingUp, DollarSign, Target } from "lucide-react";
+import { useConsultantReportStore } from "../../store/useConsultantReportStore";
 
 export default function GenerateReport() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [generating, setGenerating] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    reportType: "comprehensive",
-    dateRange: "last-month",
-    includeFinancials: true,
-    includeProgress: true,
-    includeRecommendations: true,
-    customNotes: "",
-  });
+  const {
+    reportForm,
+    generating,
+    showSuccess,
+    setReportField,
+    setShowSuccess,
+    generateReport,
+    resetForm,
+  } = useConsultantReportStore();
+
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, setShowSuccess]);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setGenerating(true);
-
-    // Simulate report generation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    setGenerating(false);
-    setShowSuccess(true);
-
-    // Auto download after showing success
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 2500);
+    await generateReport();
   };
 
   return (
@@ -98,21 +96,21 @@ export default function GenerateReport() {
                           <button
                             key={type.value}
                             type="button"
-                            onClick={() => setFormData({ ...formData, reportType: type.value })}
+                            onClick={() => setReportField("reportType", type.value)}
                             className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                              formData.reportType === type.value
+                              reportForm.reportType === type.value
                                 ? "border-teal-500 bg-teal-50"
                                 : "border-gray-200 hover:border-gray-300"
                             }`}
                           >
-                            {formData.reportType === type.value && (
+                            {reportForm.reportType === type.value && (
                               <div className="absolute top-3 right-3">
                                 <div className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center">
                                   <Check className="w-4 h-4 text-white" />
                                 </div>
                               </div>
                             )}
-                            <p className={`font-semibold mb-1 ${formData.reportType === type.value ? "text-teal-900" : "text-gray-900"}`}>
+                            <p className={`font-semibold mb-1 ${reportForm.reportType === type.value ? "text-teal-900" : "text-gray-900"}`}>
                               {type.label}
                             </p>
                             <p className="text-sm text-gray-600">{type.desc}</p>
@@ -126,8 +124,8 @@ export default function GenerateReport() {
                         Date Range
                       </label>
                       <select
-                        value={formData.dateRange}
-                        onChange={(e) => setFormData({ ...formData, dateRange: e.target.value })}
+                        value={reportForm.dateRange}
+                        onChange={(e) => setReportField("dateRange", e.target.value)}
                         className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       >
                         <option value="last-week">Last Week</option>
@@ -149,8 +147,8 @@ export default function GenerateReport() {
                     <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <input
                         type="checkbox"
-                        checked={formData.includeFinancials}
-                        onChange={(e) => setFormData({ ...formData, includeFinancials: e.target.checked })}
+                        checked={reportForm.includeFinancials}
+                        onChange={(e) => setReportField("includeFinancials", e.target.checked)}
                         className="mt-1 w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                       />
                       <div className="flex-1">
@@ -165,8 +163,8 @@ export default function GenerateReport() {
                     <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <input
                         type="checkbox"
-                        checked={formData.includeProgress}
-                        onChange={(e) => setFormData({ ...formData, includeProgress: e.target.checked })}
+                        checked={reportForm.includeProgress}
+                        onChange={(e) => setReportField("includeProgress", e.target.checked)}
                         className="mt-1 w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                       />
                       <div className="flex-1">
@@ -181,8 +179,8 @@ export default function GenerateReport() {
                     <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <input
                         type="checkbox"
-                        checked={formData.includeRecommendations}
-                        onChange={(e) => setFormData({ ...formData, includeRecommendations: e.target.checked })}
+                        checked={reportForm.includeRecommendations}
+                        onChange={(e) => setReportField("includeRecommendations", e.target.checked)}
                         className="mt-1 w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                       />
                       <div className="flex-1">
@@ -200,8 +198,8 @@ export default function GenerateReport() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Notes</h2>
                   <textarea
-                    value={formData.customNotes}
-                    onChange={(e) => setFormData({ ...formData, customNotes: e.target.value })}
+                    value={reportForm.customNotes}
+                    onChange={(e) => setReportField("customNotes", e.target.value)}
                     rows={6}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     placeholder="Add any custom notes or comments to include in the report..."
@@ -251,7 +249,7 @@ export default function GenerateReport() {
                       <Calendar className="w-5 h-5 text-gray-600" />
                       <p className="text-sm font-semibold text-gray-700">Period</p>
                     </div>
-                    <p className="text-sm text-gray-900 capitalize">{formData.dateRange.replace("-", " ")}</p>
+                    <p className="text-sm text-gray-900 capitalize">{reportForm.dateRange.replace("-", " ")}</p>
                   </div>
 
                   <div className="p-4 bg-gray-50 rounded-lg">
@@ -259,7 +257,7 @@ export default function GenerateReport() {
                       <FileText className="w-5 h-5 text-gray-600" />
                       <p className="text-sm font-semibold text-gray-700">Type</p>
                     </div>
-                    <p className="text-sm text-gray-900 capitalize">{formData.reportType} Report</p>
+                    <p className="text-sm text-gray-900 capitalize">{reportForm.reportType} Report</p>
                   </div>
 
                   <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
@@ -267,19 +265,19 @@ export default function GenerateReport() {
                       <span className="font-semibold">Sections Included:</span>
                     </p>
                     <ul className="space-y-1">
-                      {formData.includeFinancials && (
+                      {reportForm.includeFinancials && (
                         <li className="text-sm text-teal-700 flex items-center gap-2">
                           <Check className="w-4 h-4" />
                           Financial Analysis
                         </li>
                       )}
-                      {formData.includeProgress && (
+                      {reportForm.includeProgress && (
                         <li className="text-sm text-teal-700 flex items-center gap-2">
                           <Check className="w-4 h-4" />
                           Progress Tracking
                         </li>
                       )}
-                      {formData.includeRecommendations && (
+                      {reportForm.includeRecommendations && (
                         <li className="text-sm text-teal-700 flex items-center gap-2">
                           <Check className="w-4 h-4" />
                           Recommendations

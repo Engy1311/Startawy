@@ -1,25 +1,35 @@
-import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { Star, CheckCircle, X, ArrowLeft } from "lucide-react";
+import { Star, CheckCircle, ArrowLeft } from "lucide-react";
+import { useReviewStore } from "../../store/useReviewStore";
 
 export default function AddReview() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const {
+    rating,
+    hoveredRating,
+    reviewText,
+    selectedCategories,
+    showSuccess,
+    isSubmitting,
+    setRating,
+    setHoveredRating,
+    setReviewText,
+    toggleCategory,
+    setShowSuccess,
+    submitReview,
+  } = useReviewStore();
 
   const client = {
     name: "Ahmed Hassan",
     company: "TechStart Inc.",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(true);
+    await submitReview();
   };
 
   return (
@@ -98,12 +108,21 @@ export default function AddReview() {
                     ].map((category) => (
                       <div
                         key={category}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-teal-500 transition-colors"
+                        onClick={() => toggleCategory(category)}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedCategories.includes(category)
+                            ? "border-teal-500 bg-teal-50"
+                            : "border-gray-200 hover:border-teal-300"
+                        }`}
                       >
                         <label className="flex items-center justify-between cursor-pointer">
-                          <span className="text-gray-700 font-medium">{category}</span>
+                          <span className={`font-medium ${
+                            selectedCategories.includes(category) ? "text-teal-700" : "text-gray-700"
+                          }`}>{category}</span>
                           <input
                             type="checkbox"
+                            checked={selectedCategories.includes(category)}
+                            onChange={() => {}} // Handled by div onClick
                             className="w-5 h-5 text-teal-600 rounded focus:ring-2 focus:ring-teal-500"
                           />
                         </label>
@@ -126,7 +145,7 @@ export default function AddReview() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                   />
                   <p className="text-sm text-gray-500 mt-2">
-                    Minimum 50 characters
+                    Minimum 50 characters (Current: {reviewText.length})
                   </p>
                 </div>
 
@@ -134,10 +153,10 @@ export default function AddReview() {
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
-                    disabled={rating === 0 || reviewText.length < 50}
+                    disabled={rating === 0 || reviewText.length < 50 || isSubmitting}
                     className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit Review
+                    {isSubmitting ? "Submitting..." : "Submit Review"}
                   </button>
                   <Link to={`/consultant/client/${id}`}>
                     <button
@@ -171,6 +190,15 @@ export default function AddReview() {
             <p className="text-gray-600">
               Your review has been successfully added to the client's profile.
             </p>
+            <button
+              onClick={() => {
+                setShowSuccess(false);
+                navigate(`/consultant/client/${id}`);
+              }}
+              className="mt-6 w-full py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+            >
+              Continue
+            </button>
           </div>
         </div>
       )}

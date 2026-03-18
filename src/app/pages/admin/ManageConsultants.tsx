@@ -1,65 +1,95 @@
+import { useState, useEffect } from "react";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { Users, Edit, Trash2, CheckCircle, XCircle, Star, TrendingUp, DollarSign, Calendar, Plus } from "lucide-react";
-import { useState } from "react";
+import { Users, Edit, Trash2, CheckCircle, XCircle, Star, TrendingUp, DollarSign, Calendar, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useConsultantStore } from "../../store/useConsultantStore";
 
 export default function ManageConsultants() {
   const navigate = useNavigate();
-  const [consultants] = useState([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.j@example.com",
-      specialty: "Financial Strategy",
-      rating: 4.9,
-      totalSessions: 156,
-      totalEarnings: "$42,380",
-      status: "active",
-      joinDate: "Jan 2025",
-      availability: "Available",
-      clients: 48,
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      email: "m.chen@example.com",
-      specialty: "Investment Planning",
-      rating: 4.8,
-      totalSessions: 134,
-      totalEarnings: "$38,920",
-      status: "active",
-      joinDate: "Feb 2025",
-      availability: "Available",
-      clients: 42,
-    },
-    {
-      id: 3,
-      name: "Emily Rodriguez",
-      email: "emily.r@example.com",
-      specialty: "Business Consulting",
-      rating: 4.7,
-      totalSessions: 98,
-      totalEarnings: "$29,400",
-      status: "inactive",
-      joinDate: "Mar 2025",
-      availability: "On Leave",
-      clients: 35,
-    },
-    {
-      id: 4,
-      name: "David Kim",
-      email: "david.k@example.com",
-      specialty: "Market Analysis",
-      rating: 4.9,
-      totalSessions: 189,
-      totalEarnings: "$56,700",
-      status: "active",
-      joinDate: "Dec 2024",
-      availability: "Available",
-      clients: 62,
-    },
-  ]);
+  const {
+    consultants,
+    showDeleteModal,
+    showEditModal,
+    selectedConsultant,
+    showSuccessModal,
+    successMessage,
+    setShowDeleteModal,
+    setShowEditModal,
+    deleteConsultant,
+    updateConsultant,
+    toggleStatus,
+    setShowSuccessModal
+  } = useConsultantStore();
+
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    specialty: "",
+  });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmit, setIsSubmit] = useState(false);
+
+  const validate = (form = editForm) => {
+    const errors: Record<string, string> = {};
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!form.name.trim()) errors.name = "Name is required";
+    if (!form.email.trim()) errors.email = "Email is required";
+    else if (!emailRegex.test(form.email)) errors.email = "Invalid email format";
+    if (!form.specialty.trim()) errors.specialty = "Specialty is required";
+
+    return errors;
+  };
+
+  const handleEditChange = (field: string, value: string) => {
+    const newForm = { ...editForm, [field]: value };
+    setEditForm(newForm);
+
+    if (isSubmit) {
+      setFormErrors(validate(newForm));
+    } else {
+      const liveErrors = validate(newForm);
+      setFormErrors(prev => {
+        const next = { ...prev };
+        if (liveErrors[field]) {
+          if (liveErrors[field].toLowerCase().includes("required") && !value && !prev[field]) {
+            delete next[field];
+          } else {
+            next[field] = liveErrors[field];
+          }
+        } else {
+          delete next[field];
+        }
+        return next;
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (selectedConsultant && showEditModal) {
+      setEditForm({
+        name: selectedConsultant.name,
+        email: selectedConsultant.email,
+        specialty: selectedConsultant.specialty,
+      });
+      setFormErrors({});
+      setIsSubmit(false);
+    }
+  }, [selectedConsultant, showEditModal]);
+
+  const handleUpdate = () => {
+    setIsSubmit(true);
+    const errors = validate();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    if (selectedConsultant) {
+      updateConsultant(selectedConsultant.id, editForm);
+    }
+  };
 
   const activeConsultants = consultants.filter(c => c.status === "active").length;
   const totalEarnings = "$167,400";
@@ -185,24 +215,39 @@ export default function ManageConsultants() {
                         <span className="font-semibold text-green-600">{consultant.totalEarnings}</span>
                       </td>
                       <td className="px-6 py-4">
-                        {consultant.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                            <CheckCircle className="w-3 h-3" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                            <XCircle className="w-3 h-3" />
-                            Inactive
-                          </span>
-                        )}
+                        <button 
+                          onClick={() => toggleStatus(consultant.id)}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            consultant.status === "active" 
+                              ? "bg-green-100 text-green-700 hover:bg-green-200" 
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {consultant.status === "active" ? (
+                            <>
+                              <CheckCircle className="w-3 h-3" />
+                              Active
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3 h-3" />
+                              Inactive
+                            </>
+                          )}
+                        </button>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-teal-50 text-teal-600 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => setShowEditModal(true, consultant)}
+                            className="p-2 hover:bg-teal-50 text-teal-600 rounded-lg transition-colors"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => setShowDeleteModal(true, consultant)}
+                            className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -215,6 +260,118 @@ export default function ManageConsultants() {
           </div>
         </main>
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && selectedConsultant && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Edit Consultant</h3>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => handleEditChange("name", e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                />
+                {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => handleEditChange("email", e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                />
+                {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Specialty</label>
+                <input
+                  type="text"
+                  value={editForm.specialty}
+                  onChange={(e) => handleEditChange("specialty", e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"
+                />
+                {formErrors.specialty && <p className="text-red-500 text-sm mt-1">{formErrors.specialty}</p>}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleUpdate}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all font-bold shadow-lg"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedConsultant && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Consultant?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <strong>{selectedConsultant.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => deleteConsultant(selectedConsultant.id)}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold shadow-lg"
+              >
+                Yes, Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">{successMessage}</h3>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg font-bold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

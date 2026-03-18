@@ -1,16 +1,25 @@
-import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { Mail, Paperclip, CheckCircle, ArrowLeft, Send } from "lucide-react";
+import { useMessagingStore } from "../../store/useMessagingStore";
 
 export default function SendMessage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [priority, setPriority] = useState<"normal" | "high" | "urgent">("normal");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const {
+    subject,
+    message,
+    priority,
+    showSuccess,
+    isSubmitting,
+    setSubject,
+    setMessage,
+    setPriority,
+    setShowSuccess,
+    submitMessage,
+    resetMessage,
+  } = useMessagingStore();
 
   const client = {
     name: "Ahmed Hassan",
@@ -18,9 +27,9 @@ export default function SendMessage() {
     email: "ahmed@techstart.com",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(true);
+    await submitMessage();
   };
 
   return (
@@ -137,7 +146,7 @@ export default function SendMessage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
                   />
                   <p className="text-sm text-gray-500 mt-2">
-                    Minimum 20 characters
+                    Minimum 20 characters (Current: {message.length})
                   </p>
                 </div>
 
@@ -193,11 +202,11 @@ export default function SendMessage() {
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
-                    disabled={!subject || message.length < 20}
+                    disabled={!subject || message.length < 20 || isSubmitting}
                     className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-5 h-5" />
-                    Send Message
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </button>
                   <Link to={`/consultant/client/${id}`}>
                     <button
@@ -218,7 +227,11 @@ export default function SendMessage() {
       {showSuccess && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowSuccess(false)}
+          onClick={() => {
+            setShowSuccess(false);
+            resetMessage();
+            navigate(`/consultant/client/${id}`);
+          }}
         >
           <div 
             className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center"
@@ -231,6 +244,16 @@ export default function SendMessage() {
             <p className="text-gray-600">
               Your message has been successfully sent to {client.name}.
             </p>
+            <button
+              onClick={() => {
+                setShowSuccess(false);
+                resetMessage();
+                navigate(`/consultant/client/${id}`);
+              }}
+              className="mt-6 w-full py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+            >
+              Continue
+            </button>
           </div>
         </div>
       )}

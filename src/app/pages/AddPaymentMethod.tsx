@@ -1,40 +1,34 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import { ArrowLeft, CreditCard, Calendar, Check, Lock } from "lucide-react";
+import { usePaymentStore } from "../store/usePaymentStore";
 
 export default function AddPaymentMethod() {
   const navigate = useNavigate();
-  const [paymentType, setPaymentType] = useState<"card" | "bank">("card");
-  const [saving, setSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    cardholderName: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    bankName: "",
-    accountNumber: "",
-    routingNumber: "",
-    accountHolderName: "",
-    setAsDefault: false,
-  });
+  const {
+    paymentType,
+    formData,
+    formErrors,
+    isSaving,
+    showSuccess,
+    setPaymentType,
+    setFormData,
+    setShowSuccess,
+    submitPayment,
+  } = usePaymentStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
+    const success = await submitPayment();
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setSaving(false);
-    setShowSuccess(true);
-
-    // Redirect after success
-    setTimeout(() => {
-      navigate("/my-payments");
-    }, 2000);
+    if (success) {
+      // Redirect after success
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigate("/my-payments");
+      }, 2000);
+    }
   };
 
   return (
@@ -147,11 +141,13 @@ export default function AddPaymentMethod() {
                       <input
                         type="text"
                         value={formData.cardholderName}
-                        onChange={(e) => setFormData({ ...formData, cardholderName: e.target.value })}
-                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                        onChange={(e) => setFormData({ cardholderName: e.target.value })}
+                        className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                          formErrors.cardholderName ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="John Doe"
-                        required
                       />
+                      {formErrors.cardholderName && <p className="text-red-500 text-xs mt-1">{formErrors.cardholderName}</p>}
                     </div>
 
                     {/* Card Number */}
@@ -162,12 +158,14 @@ export default function AddPaymentMethod() {
                       <input
                         type="text"
                         value={formData.cardNumber}
-                        onChange={(e) => setFormData({ ...formData, cardNumber: e.target.value })}
-                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                        onChange={(e) => setFormData({ cardNumber: e.target.value })}
+                        className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                          formErrors.cardNumber ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="1234 5678 9012 3456"
                         maxLength={19}
-                        required
                       />
+                      {formErrors.cardNumber && <p className="text-red-500 text-xs mt-1">{formErrors.cardNumber}</p>}
                     </div>
 
                     {/* Expiry and CVV */}
@@ -180,14 +178,16 @@ export default function AddPaymentMethod() {
                           <input
                             type="text"
                             value={formData.expiryDate}
-                            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                            className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                            onChange={(e) => setFormData({ expiryDate: e.target.value })}
+                            className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                              formErrors.expiryDate ? "border-red-500" : "border-gray-300"
+                            }`}
                             placeholder="MM/YY"
                             maxLength={5}
-                            required
                           />
                           <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         </div>
+                        {formErrors.expiryDate && <p className="text-red-500 text-xs mt-1">{formErrors.expiryDate}</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -196,12 +196,14 @@ export default function AddPaymentMethod() {
                         <input
                           type="text"
                           value={formData.cvv}
-                          onChange={(e) => setFormData({ ...formData, cvv: e.target.value })}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          onChange={(e) => setFormData({ cvv: e.target.value })}
+                          className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                            formErrors.cvv ? "border-red-500" : "border-gray-300"
+                          }`}
                           placeholder="123"
                           maxLength={4}
-                          required
                         />
+                        {formErrors.cvv && <p className="text-red-500 text-xs mt-1">{formErrors.cvv}</p>}
                       </div>
                     </div>
                   </>
@@ -215,11 +217,13 @@ export default function AddPaymentMethod() {
                       <input
                         type="text"
                         value={formData.bankName}
-                        onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                        onChange={(e) => setFormData({ bankName: e.target.value })}
+                        className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                          formErrors.bankName ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="Bank of America"
-                        required
                       />
+                      {formErrors.bankName && <p className="text-red-500 text-xs mt-1">{formErrors.bankName}</p>}
                     </div>
 
                     {/* Account Holder Name */}
@@ -230,11 +234,13 @@ export default function AddPaymentMethod() {
                       <input
                         type="text"
                         value={formData.accountHolderName}
-                        onChange={(e) => setFormData({ ...formData, accountHolderName: e.target.value })}
-                        className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                        onChange={(e) => setFormData({ accountHolderName: e.target.value })}
+                        className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                          formErrors.accountHolderName ? "border-red-500" : "border-gray-300"
+                        }`}
                         placeholder="John Doe"
-                        required
                       />
+                      {formErrors.accountHolderName && <p className="text-red-500 text-xs mt-1">{formErrors.accountHolderName}</p>}
                     </div>
 
                     {/* Account Number and Routing Number */}
@@ -246,11 +252,13 @@ export default function AddPaymentMethod() {
                         <input
                           type="text"
                           value={formData.accountNumber}
-                          onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          onChange={(e) => setFormData({ accountNumber: e.target.value })}
+                          className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                            formErrors.accountNumber ? "border-red-500" : "border-gray-300"
+                          }`}
                           placeholder="123456789"
-                          required
                         />
+                        {formErrors.accountNumber && <p className="text-red-500 text-xs mt-1">{formErrors.accountNumber}</p>}
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -259,11 +267,13 @@ export default function AddPaymentMethod() {
                         <input
                           type="text"
                           value={formData.routingNumber}
-                          onChange={(e) => setFormData({ ...formData, routingNumber: e.target.value })}
-                          className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          onChange={(e) => setFormData({ routingNumber: e.target.value })}
+                          className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                            formErrors.routingNumber ? "border-red-500" : "border-gray-300"
+                          }`}
                           placeholder="987654321"
-                          required
                         />
+                        {formErrors.routingNumber && <p className="text-red-500 text-xs mt-1">{formErrors.routingNumber}</p>}
                       </div>
                     </div>
                   </>
@@ -274,7 +284,7 @@ export default function AddPaymentMethod() {
                   <input
                     type="checkbox"
                     checked={formData.setAsDefault}
-                    onChange={(e) => setFormData({ ...formData, setAsDefault: e.target.checked })}
+                    onChange={(e) => setFormData({ setAsDefault: e.target.checked })}
                     className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
                   />
                   <label className="ml-2 text-sm text-gray-700">
@@ -295,10 +305,10 @@ export default function AddPaymentMethod() {
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
-                    disabled={saving}
+                    disabled={isSaving}
                     className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {saving ? (
+                    {isSaving ? (
                       <span className="flex items-center justify-center gap-2">
                         <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>

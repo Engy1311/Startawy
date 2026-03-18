@@ -1,35 +1,48 @@
 import { Link } from "react-router";
 import { Bell, Search, Sun, Moon } from "lucide-react";
 import { useThemeStore } from "../store/useThemeStore";
+import { useProfileStore } from "../store/useProfileStore";
+import { useConsultantProfileStore } from "../store/useConsultantProfileStore";
+import { useAdminProfileStore } from "../store/useAdminProfileStore";
 
 interface TopBarProps {
   userRole?: "founder" | "consultant" | "admin";
 }
 
-const userProfiles = {
-  founder: {
-    name: "Sarah Johnson",
-    role: "Startup Founder",
-    initials: "SJ",
-    profileLink: "/profile",
-  },
-  consultant: {
-    name: "Sarah Johnson",
-    role: "Financial Consultant",
-    initials: "SJ",
-    profileLink: "/consultant/profile",
-  },
-  admin: {
-    name: "Sarah Johnson",
-    role: "Admin",
-    initials: "SJ",
-    profileLink: "/admin/profile",
-  },
-};
-
 export function TopBar({ userRole = "founder" }: TopBarProps) {
-  const user = userProfiles[userRole];
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const founderName = useProfileStore((state) => state.formData.fullName);
+  const consultantName = useConsultantProfileStore((state) => state.formData.fullName);
+  const adminName = useAdminProfileStore((state) => state.formData.fullName);
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const userProfiles = {
+    founder: {
+      name: founderName || "Startup Founder",
+      role: "Startup Founder",
+      initials: getInitials(founderName || "Startup Founder"),
+      profileLink: "/profile",
+    },
+    consultant: {
+      name: consultantName || "Financial Consultant",
+      role: "Financial Consultant",
+      initials: getInitials(consultantName || "Financial Consultant"),
+      profileLink: "/consultant/profile",
+    },
+    admin: {
+      name: adminName || "Platform Admin",
+      role: "Admin",
+      initials: getInitials(adminName || "Platform Admin"),
+      profileLink: "/admin/profile",
+    },
+  };
+
+  const user = userProfiles[userRole];
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-8 py-4 lg:ml-0 transition-colors">

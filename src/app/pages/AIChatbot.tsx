@@ -1,71 +1,16 @@
-import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import { Send, Bot, User as UserIcon } from "lucide-react";
-
-interface Message {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
-
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    role: "assistant",
-    content: "Hello! I'm StartBot, your AI Financial Advisor. How can I help you today? You can ask me about budget planning, financial strategies, market trends, or any business-related questions.",
-    timestamp: new Date(),
-  },
-];
+import { useChatStore } from "../store/useChatStore";
 
 export function AIChatbot() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      id: messages.length + 1,
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: messages.length + 2,
-        role: "assistant",
-        content: getAIResponse(input),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const getAIResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes("budget") || input.includes("expenses")) {
-      return "Based on your current financial data, I recommend focusing on optimizing your marketing spend and operational costs. Your revenue is growing well at 15.3%, but expenses increased by 28.2% last month. Consider reviewing vendor contracts and exploring cost-effective alternatives.";
-    } else if (input.includes("revenue") || input.includes("income") || input.includes("profit")) {
-      return "Your revenue growth is impressive! To maintain this momentum, I suggest: 1) Invest in customer retention programs (5x cheaper than acquisition), 2) Explore upselling opportunities with existing clients, 3) Set aside 20% for emergency reserves and 30% for growth investments.";
-    } else if (input.includes("market") || input.includes("competition")) {
-      return "Market analysis shows your sector is experiencing 12% YoY growth. Key trends include digital transformation and sustainability initiatives. I recommend accessing our Market Reports library for detailed insights specific to your industry.";
-    } else if (input.includes("consultant") || input.includes("advisor")) {
-      return "I recommend scheduling a session with one of our expert consultants for personalized advice. Sarah Johnson specializes in budget optimization, while Michael Chen focuses on growth strategies. Both have excellent reviews from startup founders.";
-    } else {
-      return "That's a great question! For detailed guidance on this topic, I recommend: 1) Reviewing your Budget Analysis dashboard for current metrics, 2) Checking the Market Reports section for industry insights, or 3) Booking a session with one of our expert consultants for personalized advice. Is there anything specific you'd like to know more about?";
-    }
-  };
+  const {
+    messages,
+    input,
+    isTyping,
+    setInput,
+    handleSend,
+  } = useChatStore();
 
   return (
     <div className="flex min-h-screen bg-gray-50">

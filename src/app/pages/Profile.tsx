@@ -1,10 +1,64 @@
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
-import { User, Mail, MapPin, Briefcase, Calendar, Award, Edit, CreditCard, Check, ArrowUpRight } from "lucide-react";
+import { User, Mail, MapPin, Briefcase, Calendar, Award, Edit, CreditCard, Check, ArrowUpRight, Lock, Trash2 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useProfileStore } from "../store/useProfileStore";
 
 export function Profile() {
+  const navigate = useNavigate();
+  const {
+    formData,
+    setFormData,
+    formErrors,
+    passwordData,
+    setPasswordData,
+    passwordErrors,
+    isSaving,
+    showSuccess,
+    setShowSuccess,
+    successMessage,
+    showPasswordModal,
+    setShowPasswordModal,
+    showDeleteModal,
+    setShowDeleteModal,
+    submitProfile,
+    submitPassword,
+    deleteAccount,
+  } = useProfileStore();
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await submitProfile();
+    if (success) {
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await submitPassword();
+    if (success) {
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const success = await deleteAccount();
+    if (success) {
+      navigate("/login");
+    }
+  };
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -13,6 +67,124 @@ export function Profile() {
         <TopBar userRole="founder" />
         
         <main className="flex-1 p-8 overflow-y-auto">
+          {/* Success Popup */}
+          {showSuccess && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+              <div className="bg-white rounded-3xl p-10 max-w-md mx-4 shadow-2xl transform animate-slideUp">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 mb-6 animate-checkBounce shadow-lg">
+                    <Check className="h-10 w-10 text-white stroke-[3]" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3">Saved Successfully!</h3>
+                  <p className="text-gray-600 text-lg">{successMessage}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Update Password Modal */}
+          {showPasswordModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+                <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 rounded-t-2xl">
+                  <h2 className="text-2xl font-bold text-white">Update Password</h2>
+                </div>
+                <form onSubmit={handleUpdatePassword} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ currentPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.currentPassword ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {passwordErrors.currentPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.currentPassword}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ newPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.newPassword ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {passwordErrors.newPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.newPassword}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ confirmPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.confirmPassword ? "border-red-500" : "border-gray-300"
+                      }`}
+                    />
+                    {passwordErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.confirmPassword}</p>}
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg font-semibold disabled:opacity-50"
+                    >
+                      {isSaving ? "Updating..." : "Update Password"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordModal(false)}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Account Modal */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-8">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <Trash2 className="h-8 w-8 text-red-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Delete Account?</h3>
+                  <p className="text-gray-600 mb-6">
+                    This action cannot be undone. All your data will be permanently deleted.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={isSaving}
+                      className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-lg font-semibold disabled:opacity-50"
+                    >
+                      {isSaving ? "Deleting..." : "Yes, Delete"}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
@@ -24,31 +196,30 @@ export function Profile() {
             {/* Cover */}
             <div className="h-32 bg-gradient-to-r from-teal-500 to-teal-600"></div>
             
-            {/* Profile Info */}
+             {/* Profile Info */}
             <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 mb-6">
                 <div className="relative">
-                  <div className="w-32 h-32 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-lg">
-                    EP
+                  <div className=" w-32 h-32 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold border-4 border-white shadow-xl transform hover:scale-105 transition-transform duration-300">
+                    {getInitials(formData.fullName || "Startup Founder")}
                   </div>
                   <button className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors">
                     <Edit className="w-5 h-5 text-gray-600" />
                   </button>
                 </div>
                 
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Emma Park</h2>
+                <div className="mt-2 flex-1">
+                  <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 mt-2 mb-2">{formData.fullName || "Startup Founder"}</h2>
                   <p className="text-gray-600 mb-4">Startup Founder</p>
                   <div className="flex flex-wrap gap-3">
-                    <span className="px-4 py-2 bg-teal-100 text-teal-700 rounded-lg text-sm font-medium">
+                    <span className="mt-2 mb-2 px-4 py-2 bg-teal-100 text-teal-700 rounded-lg text-sm font-medium">
                       Basic Plan
                     </span>
-                    <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                    <span className="mt-2 mb-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
                       Member since Jan 2026
                     </span>
                   </div>
                 </div>
-
                 <Link to="/edit-profile">
                   <button className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold flex items-center gap-2">
                     <Edit className="w-5 h-5" />
@@ -66,7 +237,7 @@ export function Profile() {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Personal Information</h3>
                 
-                <div className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -78,10 +249,14 @@ export function Profile() {
                         </div>
                         <input
                           type="text"
-                          defaultValue="Emma Park"
-                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          value={formData.fullName}
+                          onChange={(e) => setFormData({ fullName: e.target.value })}
+                          className={`block w-full pl-10 pr-3 py-3 border rounded-lg bg-gray-50 text-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                            formErrors.fullName ? "border-red-500" : "border-gray-300"
+                          }`}
                         />
                       </div>
+                      {formErrors.fullName && <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>}
                     </div>
 
                     <div>
@@ -94,10 +269,14 @@ export function Profile() {
                         </div>
                         <input
                           type="email"
-                          defaultValue="emma.park@techstart.com"
-                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ email: e.target.value })}
+                          className={`block w-full pl-10 pr-3 py-3 border rounded-lg bg-gray-50 text-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all ${
+                            formErrors.email ? "border-red-500" : "border-gray-300"
+                          }`}
                         />
                       </div>
+                      {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                     </div>
                   </div>
 
@@ -112,8 +291,9 @@ export function Profile() {
                         </div>
                         <input
                           type="text"
-                          defaultValue="TechStart Inc."
-                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          value={formData.company}
+                          onChange={(e) => setFormData({ company: e.target.value })}
+                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
                         />
                       </div>
                     </div>
@@ -128,8 +308,9 @@ export function Profile() {
                         </div>
                         <input
                           type="text"
-                          defaultValue="San Francisco, CA"
-                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ location: e.target.value })}
+                          className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
                         />
                       </div>
                     </div>
@@ -141,20 +322,24 @@ export function Profile() {
                     </label>
                     <textarea
                       rows={4}
-                      defaultValue="Passionate entrepreneur building innovative fintech solutions. Focused on creating sustainable and scalable business models."
-                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ bio: e.target.value })}
+                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all resize-none"
                     />
                   </div>
 
-                  <div className="flex justify-end">
-                    <button className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold">
-                      Save Changes
+                  <div className="flex justify-end pt-4">
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold disabled:opacity-50"
+                    >
+                      {isSaving ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
-                </div>
+                </form>
               </div>
-
-              {/* Change Password */}
+{/* Change Password */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">Change Password</h3>
                 
@@ -202,6 +387,7 @@ export function Profile() {
                 </div>
               </div>
             </div>
+
 
             {/* Right Column - Stats & Subscription */}
             <div className="lg:col-span-1 space-y-6">
@@ -284,7 +470,10 @@ export function Profile() {
                 <p className="text-gray-600 text-sm mb-4">
                   Once you delete your account, there is no going back. Please be certain.
                 </p>
-                <button className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                <button 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold shadow-md"
+                >
                   Delete Account
                 </button>
               </div>
@@ -292,6 +481,24 @@ export function Profile() {
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes checkBounce {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.5s ease-out;
+        }
+        .animate-checkBounce {
+          animation: checkBounce 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 }
