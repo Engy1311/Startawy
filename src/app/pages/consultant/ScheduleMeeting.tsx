@@ -1,17 +1,20 @@
-import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { Calendar, Clock, FileText, CheckCircle, ArrowLeft, Video } from "lucide-react";
+import { useMeetingStore } from "../../store/useMeetingStore";
 
 export default function ScheduleMeeting() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [meetingType, setMeetingType] = useState<"video" | "phone">("video");
-  const [agenda, setAgenda] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const {
+    formData,
+    showSuccess,
+    setFormField,
+    setShowSuccess,
+    submitMeeting,
+    resetForm,
+  } = useMeetingStore();
 
   const client = {
     name: "Ahmed Hassan",
@@ -30,9 +33,15 @@ export default function ScheduleMeeting() {
     "05:00 PM",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(true);
+    await submitMeeting();
+  };
+
+  const handleCloseSuccess = () => {
+    setShowSuccess(false);
+    resetForm();
+    navigate(`/consultant/client/${id}`);
   };
 
   return (
@@ -73,34 +82,34 @@ export default function ScheduleMeeting() {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
-                      onClick={() => setMeetingType("video")}
+                      onClick={() => setFormField("meetingType", "video")}
                       className={`p-4 border-2 rounded-lg transition-all ${
-                        meetingType === "video"
+                        formData.meetingType === "video"
                           ? "border-teal-600 bg-teal-50"
                           : "border-gray-200 hover:border-teal-300"
                       }`}
                     >
                       <Video className={`w-8 h-8 mx-auto mb-2 ${
-                        meetingType === "video" ? "text-teal-600" : "text-gray-400"
+                        formData.meetingType === "video" ? "text-teal-600" : "text-gray-400"
                       }`} />
                       <p className={`font-medium ${
-                        meetingType === "video" ? "text-teal-600" : "text-gray-700"
+                        formData.meetingType === "video" ? "text-teal-600" : "text-gray-700"
                       }`}>Video Call</p>
                     </button>
                     <button
                       type="button"
-                      onClick={() => setMeetingType("phone")}
+                      onClick={() => setFormField("meetingType", "phone")}
                       className={`p-4 border-2 rounded-lg transition-all ${
-                        meetingType === "phone"
+                        formData.meetingType === "phone"
                           ? "border-teal-600 bg-teal-50"
                           : "border-gray-200 hover:border-teal-300"
                       }`}
                     >
                       <span className={`text-4xl block mb-2 ${
-                        meetingType === "phone" ? "text-teal-600" : "text-gray-400"
+                        formData.meetingType === "phone" ? "text-teal-600" : "text-gray-400"
                       }`}>📞</span>
                       <p className={`font-medium ${
-                        meetingType === "phone" ? "text-teal-600" : "text-gray-700"
+                        formData.meetingType === "phone" ? "text-teal-600" : "text-gray-700"
                       }`}>Phone Call</p>
                     </button>
                   </div>
@@ -114,8 +123,8 @@ export default function ScheduleMeeting() {
                   </label>
                   <input
                     type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    value={formData.selectedDate}
+                    onChange={(e) => setFormField("selectedDate", e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -133,10 +142,10 @@ export default function ScheduleMeeting() {
                       <button
                         key={time}
                         type="button"
-                        onClick={() => setSelectedTime(time)}
-                        disabled={!selectedDate}
+                        onClick={() => setFormField("selectedTime", time)}
+                        disabled={!formData.selectedDate}
                         className={`py-3 px-4 border-2 rounded-lg font-medium transition-all ${
-                          selectedTime === time
+                          formData.selectedTime === time
                             ? "border-teal-600 bg-teal-50 text-teal-700"
                             : "border-gray-200 hover:border-teal-300 text-gray-700"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -145,7 +154,7 @@ export default function ScheduleMeeting() {
                       </button>
                     ))}
                   </div>
-                  {!selectedDate && (
+                  {!formData.selectedDate && (
                     <p className="text-sm text-gray-500 mt-2">Please select a date first</p>
                   )}
                 </div>
@@ -157,8 +166,8 @@ export default function ScheduleMeeting() {
                     Meeting Agenda
                   </label>
                   <textarea
-                    value={agenda}
-                    onChange={(e) => setAgenda(e.target.value)}
+                    value={formData.agenda}
+                    onChange={(e) => setFormField("agenda", e.target.value)}
                     placeholder="e.g., Q1 Budget Review, Cost Optimization Strategies..."
                     rows={6}
                     required
@@ -167,7 +176,7 @@ export default function ScheduleMeeting() {
                 </div>
 
                 {/* Session Summary */}
-                {selectedDate && selectedTime && (
+                {formData.selectedDate && formData.selectedTime && (
                   <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                     <h3 className="font-semibold text-gray-900 mb-4">Session Summary</h3>
                     <div className="space-y-2 text-gray-700">
@@ -175,7 +184,7 @@ export default function ScheduleMeeting() {
                         <strong>Client:</strong> {client.name}
                       </p>
                       <p>
-                        <strong>Date:</strong> {new Date(selectedDate).toLocaleDateString("en-US", { 
+                        <strong>Date:</strong> {new Date(formData.selectedDate).toLocaleDateString("en-US", { 
                           weekday: "long", 
                           year: "numeric", 
                           month: "long", 
@@ -183,10 +192,10 @@ export default function ScheduleMeeting() {
                         })}
                       </p>
                       <p>
-                        <strong>Time:</strong> {selectedTime}
+                        <strong>Time:</strong> {formData.selectedTime}
                       </p>
                       <p>
-                        <strong>Type:</strong> {meetingType === "video" ? "Video Call" : "Phone Call"}
+                        <strong>Type:</strong> {formData.meetingType === "video" ? "Video Call" : "Phone Call"}
                       </p>
                       <p>
                         <strong>Duration:</strong> 1 Hour
@@ -199,7 +208,7 @@ export default function ScheduleMeeting() {
                 <div className="flex gap-4 pt-4">
                   <button
                     type="submit"
-                    disabled={!selectedDate || !selectedTime || !agenda}
+                    disabled={!formData.selectedDate || !formData.selectedTime || !formData.agenda}
                     className="flex-1 px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Schedule Session
@@ -223,7 +232,7 @@ export default function ScheduleMeeting() {
       {showSuccess && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowSuccess(false)}
+          onClick={handleCloseSuccess}
         >
           <div 
             className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center"
@@ -237,9 +246,15 @@ export default function ScheduleMeeting() {
               Your consultation session with {client.name} has been scheduled successfully.
             </p>
             <p className="text-gray-700 font-medium">
-              {selectedDate} at {selectedTime}
+              {formData.selectedDate} at {formData.selectedTime}
             </p>
             <p className="text-sm text-gray-500 mt-4">The client will be notified via email.</p>
+            <button
+              onClick={handleCloseSuccess}
+              className="mt-6 w-full py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

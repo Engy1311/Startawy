@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
-import { Star, Send, ThumbsUp } from "lucide-react";
+import { Star, Send, ThumbsUp, CheckCircle } from "lucide-react";
+import { useFeedbackStore } from "../store/useFeedbackStore";
 
 const existingReviews = [
   {
@@ -39,16 +39,21 @@ const existingReviews = [
 ];
 
 export function Feedback() {
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const {
+    rating,
+    hoveredRating,
+    comment,
+    isSubmitting,
+    showSuccess,
+    setRating,
+    setHoveredRating,
+    setComment,
+    submitFeedback,
+  } = useFeedbackStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle feedback submission
-    console.log({ rating, comment });
-    setRating(0);
-    setComment("");
+    submitFeedback();
   };
 
   return (
@@ -59,6 +64,21 @@ export function Feedback() {
         <TopBar userRole="founder" />
         
         <main className="flex-1 p-8 overflow-y-auto">
+          {/* Success Notification */}
+          {showSuccess && (
+            <div className="fixed top-4 right-4 z-50 animate-slideIn">
+              <div className="bg-white rounded-xl shadow-xl border border-teal-100 p-4 flex items-center gap-3 pr-8">
+                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
+                  <CheckCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-900">Feedback Submitted</h4>
+                  <p className="text-sm text-gray-600">Thank you for your review!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Feedback & Reviews</h1>
@@ -119,21 +139,27 @@ export function Feedback() {
                       rows={6}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all resize-none"
                       placeholder="Tell us about your experience with Startawy..."
-                      required
                     />
-                    <p className="text-xs text-gray-500 mt-2">
-                      {comment.length} / 500 characters
-                    </p>
+                    <div className="flex justify-between mt-2">
+                      <p className="text-xs text-gray-500">
+                        {comment.length} / 500 characters
+                      </p>
+                      {rating === 0 && <p className="text-red-500 text-xs">Please select a rating</p>}
+                    </div>
                   </div>
 
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={rating === 0 || !comment.trim()}
+                    disabled={isSubmitting || rating === 0 || !comment.trim()}
                     className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="w-5 h-5" />
-                    Submit Feedback
+                    {isSubmitting ? (
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                    {isSubmitting ? "Submitting..." : "Submit Feedback"}
                   </button>
                 </form>
 
@@ -262,6 +288,16 @@ export function Feedback() {
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

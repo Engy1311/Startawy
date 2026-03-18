@@ -1,83 +1,33 @@
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { MessageCircle, Star, ThumbsUp, ThumbsDown, Filter, Search, Calendar } from "lucide-react";
+import { MessageCircle, Star, ThumbsUp, ThumbsDown, Filter, Search, Calendar, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { useState } from "react";
+import { useReviewFeedbackStore } from "../../store/useReviewFeedbackStore";
 
 export default function ReviewFeedback() {
-  const [filterRating, setFilterRating] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   
-  const feedbacks = [
-    {
-      id: 1,
-      founderName: "John Doe",
-      founderEmail: "john.doe@example.com",
-      consultantName: "Sarah Johnson",
-      rating: 5,
-      comment: "Excellent consultation! Sarah provided invaluable insights into our financial strategy. Highly recommended!",
-      date: "Mar 5, 2026",
-      sessionType: "Financial Strategy",
-      helpful: 12,
-    },
-    {
-      id: 2,
-      founderName: "Jane Smith",
-      founderEmail: "jane.smith@example.com",
-      consultantName: "Michael Chen",
-      rating: 4,
-      comment: "Very helpful session. Michael's expertise in investment planning was evident. Would book again.",
-      date: "Mar 4, 2026",
-      sessionType: "Investment Planning",
-      helpful: 8,
-    },
-    {
-      id: 3,
-      founderName: "Robert Williams",
-      founderEmail: "robert.w@example.com",
-      consultantName: "Emily Rodriguez",
-      rating: 5,
-      comment: "Outstanding! Emily's business consulting helped us pivot our strategy successfully.",
-      date: "Mar 3, 2026",
-      sessionType: "Business Consulting",
-      helpful: 15,
-    },
-    {
-      id: 4,
-      founderName: "Lisa Anderson",
-      founderEmail: "lisa.a@example.com",
-      consultantName: "David Kim",
-      rating: 3,
-      comment: "Good session but could have been more tailored to our specific industry needs.",
-      date: "Mar 2, 2026",
-      sessionType: "Market Analysis",
-      helpful: 4,
-    },
-    {
-      id: 5,
-      founderName: "Michael Brown",
-      founderEmail: "m.brown@example.com",
-      consultantName: "Sarah Johnson",
-      rating: 5,
-      comment: "Sarah is amazing! Her financial analysis was spot-on and helped us secure funding.",
-      date: "Mar 1, 2026",
-      sessionType: "Financial Analysis",
-      helpful: 20,
-    },
-    {
-      id: 6,
-      founderName: "Emma Davis",
-      founderEmail: "emma.d@example.com",
-      consultantName: "Michael Chen",
-      rating: 4,
-      comment: "Very professional and knowledgeable. The investment recommendations were practical and actionable.",
-      date: "Feb 28, 2026",
-      sessionType: "Investment Planning",
-      helpful: 9,
-    },
-  ];
+  const {
+    feedbacks,
+    filterRating,
+    showReportModal,
+    showSuccessModal,
+    successMessage,
+    selectedFeedbackId,
+    setFilterRating,
+    markHelpful,
+    openReportModal,
+    closeModals,
+    submitReport,
+    closeSuccessModal
+  } = useReviewFeedbackStore();
 
-  const filteredFeedbacks = filterRating === "all" 
-    ? feedbacks 
-    : feedbacks.filter(f => f.rating === parseInt(filterRating));
+  const filteredFeedbacks = feedbacks.filter(f => 
+    (filterRating === "all" || f.rating === parseInt(filterRating)) &&
+    (f.founderName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     f.consultantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     f.comment.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const averageRating = (feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length).toFixed(1);
   const totalFeedbacks = feedbacks.length;
@@ -147,6 +97,8 @@ export default function ReviewFeedback() {
                 <input
                   type="text"
                   placeholder="Search feedback..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
@@ -171,7 +123,7 @@ export default function ReviewFeedback() {
           {/* Feedback List */}
           <div className="space-y-6">
             {filteredFeedbacks.map((feedback) => (
-              <div key={feedback.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div key={feedback.id} className={`bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow ${feedback.isReported ? 'border-red-300 bg-red-50/30' : 'border-gray-200'}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -188,6 +140,11 @@ export default function ReviewFeedback() {
                       {renderStars(feedback.rating)}
                     </div>
                     <span className="text-sm text-gray-500">{feedback.date}</span>
+                    {feedback.isReported && (
+                      <span className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Reported
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -201,21 +158,88 @@ export default function ReviewFeedback() {
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors">
-                      <ThumbsUp className="w-4 h-4" />
+                    <button 
+                      onClick={() => markHelpful(feedback.id)}
+                      className={`flex items-center gap-2 transition-colors ${feedback.isHelpfulLiked ? 'text-teal-600' : 'text-gray-600 hover:text-teal-600'}`}
+                    >
+                      <ThumbsUp className={`w-4 h-4 ${feedback.isHelpfulLiked ? 'fill-current' : ''}`} />
                       <span className="text-sm font-medium">Helpful ({feedback.helpful})</span>
                     </button>
-                    <button className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors">
-                      <ThumbsDown className="w-4 h-4" />
-                      <span className="text-sm font-medium">Report</span>
-                    </button>
+                    {!feedback.isReported && (
+                      <button 
+                        onClick={() => openReportModal(feedback.id)}
+                        className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        <span className="text-sm font-medium">Report</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
+            {filteredFeedbacks.length === 0 && (
+              <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 text-lg">No feedbacks found matching your criteia.</p>
+              </div>
+            )}
           </div>
         </main>
       </div>
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center">
+            <div className="flex justify-end">
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Report Review</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to flag this review for moderation? It will be hidden pending administrator review.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={closeModals}
+                className="px-6 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 flex-1"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={submitReport}
+                className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md flex-1"
+              >
+                Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Action Successful</h3>
+            <p className="text-gray-600 mb-6">{successMessage}</p>
+            <button 
+              onClick={closeSuccessModal}
+              className="w-full px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

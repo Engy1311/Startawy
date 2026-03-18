@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import {
@@ -15,64 +14,24 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Link } from "react-router";
+import { useBudgetReportStore } from "../store/useBudgetReportStore";
 
 export function GenerateBudgetReport() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    // Section 1: Business Information
-    businessName: "",
-    industry: "",
-    businessStage: "",
-    location: "",
-    
-    // Section 2: Revenue Information
-    productPrice: "",
-    monthlySales: "",
-    expectedRevenue: "",
-    
-    // Section 3: Fixed Costs
-    rent: "",
-    salaries: "",
-    softwareSubscriptions: "",
-    utilities: "",
-    otherFixedCosts: "",
-    
-    // Section 4: Variable Costs
-    costPerProduct: "",
-    rawMaterials: "",
-    shippingCosts: "",
-    packagingCosts: "",
-    
-    // Section 5: Marketing Budget
-    monthlyMarketingBudget: "",
-    advertisingSpending: "",
-    
-    // Section 6: Investment Information
-    initialInvestment: "",
-    availableMonthlyBudget: "",
-    loans: "",
-  });
-
-  const [reportGenerated, setReportGenerated] = useState(false);
+  const {
+    step,
+    formData,
+    reportGenerated,
+    isGenerating,
+    setFormData,
+    nextStep,
+    prevStep,
+    generateReport,
+  } = useBudgetReportStore();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
-      ...formData,
       [e.target.name]: e.target.value,
     });
-  };
-
-  const nextStep = () => {
-    if (step < 6) setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const generateReport = () => {
-    setReportGenerated(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const totalSteps = 6;
@@ -368,7 +327,7 @@ export function GenerateBudgetReport() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Cost per Product ($)
                         </label>
                         <input
@@ -382,7 +341,7 @@ export function GenerateBudgetReport() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Raw Materials ($)
                         </label>
                         <input
@@ -396,7 +355,7 @@ export function GenerateBudgetReport() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Shipping Costs ($)
                         </label>
                         <input
@@ -410,7 +369,7 @@ export function GenerateBudgetReport() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
                           Packaging Costs ($)
                         </label>
                         <input
@@ -534,6 +493,7 @@ export function GenerateBudgetReport() {
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between">
                 <button
+                  type="button"
                   onClick={prevStep}
                   disabled={step === 1}
                   className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -543,6 +503,7 @@ export function GenerateBudgetReport() {
 
                 {step < totalSteps ? (
                   <button
+                    type="button"
                     onClick={nextStep}
                     className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold"
                   >
@@ -550,11 +511,17 @@ export function GenerateBudgetReport() {
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={generateReport}
+                    disabled={isGenerating}
                     className="px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold flex items-center gap-2"
                   >
-                    <Sparkles className="w-5 h-5" />
-                    Generate Budget Report
+                    {isGenerating ? (
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <Sparkles className="w-5 h-5" />
+                    )}
+                    {isGenerating ? "Generating..." : "Generate Budget Report"}
                   </button>
                 )}
               </div>

@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
 import { Calendar, Clock, Video, CheckCircle, XCircle, X } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { useSessionStore } from "../store/useButtonsStore";
+import { useSessionStore } from "../store/useSessionsStore";
 
 export default function MySessions() {
   const { 

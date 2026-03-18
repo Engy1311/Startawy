@@ -1,9 +1,13 @@
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
-import { Package, Check, ArrowRight, TrendingUp, Calendar, Star } from "lucide-react";
+import { Package, Check, ArrowRight, TrendingUp, Calendar, Star, AlertTriangle, CheckCircle, X } from "lucide-react";
 import { Link } from "react-router";
+import { useState } from "react";
 
 export function MyPlan() {
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCancelSuccess, setShowCancelSuccess] = useState(false);
+
   const currentPlan = {
     name: "Basic",
     price: "$99",
@@ -68,6 +72,11 @@ export function MyPlan() {
       recommended: true,
     },
   ];
+
+  const handleCancelSubscription = () => {
+    setShowCancelConfirm(false);
+    setShowCancelSuccess(true);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -134,7 +143,10 @@ export function MyPlan() {
                 Upgrade Plan
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <button className="px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-colors font-semibold">
+              <button 
+                onClick={() => setShowCancelConfirm(true)}
+                className="px-6 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-colors font-semibold"
+              >
                 Cancel Subscription
               </button>
             </div>
@@ -162,7 +174,7 @@ export function MyPlan() {
                     </div>
                   )}
                   
-                  <div className={`bg-gradient-to-r from-${plan.color}-500 to-${plan.color}-600 p-6 text-white`}>
+                  <div className={`bg-gradient-to-r from-${plan.color === "gray" ? "gray" : plan.color === "teal" ? "teal" : "purple"}-500 to-${plan.color === "gray" ? "gray" : plan.color === "teal" ? "teal" : "purple"}-600 p-6 text-white`}>
                     <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                     <p className="text-sm opacity-90 mb-4">{plan.description}</p>
                     <div className="flex items-baseline gap-1">
@@ -187,7 +199,7 @@ export function MyPlan() {
                     </div>
 
                     {plan.isCurrent ? (
-                      <button className="w-full px-4 py-3 bg-gray-100 text-gray-600 rounded-lg font-semibold cursor-not-allowed">
+                      <button className="w-full px-4 py-3 bg-gray-100 text-gray-600 rounded-lg font-semibold cursor-not-allowed text-center">
                         Current Plan
                       </button>
                     ) : (
@@ -245,6 +257,56 @@ export function MyPlan() {
           </div>
         </main>
       </div>
+
+      {/* Cancellation Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Cancel Subscription?</h3>
+            <p className="text-gray-600 mb-6 font-medium">
+              You will lose access to premium features and active sessions at the end of your billing cycle on <strong>{currentPlan.nextBilling}</strong>.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleCancelSubscription}
+                className="px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold shadow-lg"
+              >
+                Yes, Cancel
+              </button>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="px-6 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-bold"
+              >
+                Keep Plan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Success Modal */}
+      {showCancelSuccess && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-teal-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Processed</h3>
+            <p className="text-gray-600 mb-6">
+              Your subscription has been scheduled for cancellation. You can still use your current plan features until <strong>{currentPlan.nextBilling}</strong>.
+            </p>
+            <button
+              onClick={() => setShowCancelSuccess(false)}
+              className="w-full px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg font-bold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

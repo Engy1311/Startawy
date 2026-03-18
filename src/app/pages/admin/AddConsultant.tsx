@@ -1,26 +1,23 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { ArrowLeft, Upload, Check, User, Mail, Phone, Briefcase, GraduationCap, Award, DollarSign, Calendar } from "lucide-react";
+import { useAdminStore } from "../../store/useAdminStore";
 
 export default function AddConsultant() {
   const navigate = useNavigate();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    specialty: "",
-    major: "",
-    yearsOfExperience: "",
-    education: "",
-    certifications: "",
-    hourlyRate: "",
-    bio: "",
-    linkedIn: "",
-    availability: [] as string[],
-  });
+  const {
+    consultantForm,
+    formErrors,
+    showSuccess,
+    isSubmitting,
+    setConsultantField,
+    toggleAvailability,
+    setShowSuccess,
+    submitConsultant,
+    resetForm,
+  } = useAdminStore();
 
   const specialties = [
     "Financial Planning",
@@ -37,25 +34,20 @@ export default function AddConsultant() {
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
   ];
 
-  const handleAvailabilityToggle = (day: string) => {
-    setFormData(prev => ({
-      ...prev,
-      availability: prev.availability.includes(day)
-        ? prev.availability.filter(d => d !== day)
-        : [...prev.availability, day]
-    }));
-  };
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+        resetForm();
+        navigate("/admin/consultants");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, navigate, setShowSuccess, resetForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Show success popup
-    setShowSuccess(true);
-    
-    // Navigate back after success
-    setTimeout(() => {
-      navigate("/admin/consultants");
-    }, 2000);
+    await submitConsultant();
   };
 
   return (
@@ -112,12 +104,12 @@ export default function AddConsultant() {
                     </label>
                     <input
                       type="text"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      value={consultantForm.fullName}
+                      onChange={(e) => setConsultantField("fullName", e.target.value)}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="Dr. John Smith"
-                      required
                     />
+                    {formErrors.fullName && <p className="text-red-500 text-sm mt-1">{formErrors.fullName}</p>}
                   </div>
 
                   <div>
@@ -128,13 +120,13 @@ export default function AddConsultant() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        value={consultantForm.email}
+                        onChange={(e) => setConsultantField("email", e.target.value)}
                         className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="john.smith@example.com"
-                        required
                       />
                     </div>
+                    {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
                   </div>
 
                   <div>
@@ -145,13 +137,13 @@ export default function AddConsultant() {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        value={consultantForm.phone}
+                        onChange={(e) => setConsultantField("phone", e.target.value)}
                         className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="+1 (555) 123-4567"
-                        required
                       />
                     </div>
+                    {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
                   </div>
                 </div>
               </div>
@@ -169,8 +161,8 @@ export default function AddConsultant() {
                       Specialty *
                     </label>
                     <select
-                      value={formData.specialty}
-                      onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                      value={consultantForm.specialty}
+                      onChange={(e) => setConsultantField("specialty", e.target.value)}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       required
                     >
@@ -179,6 +171,7 @@ export default function AddConsultant() {
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
                     </select>
+                    {formErrors.specialty && <p className="text-red-500 text-sm mt-1">{formErrors.specialty}</p>}
                   </div>
 
                   <div>
@@ -187,12 +180,12 @@ export default function AddConsultant() {
                     </label>
                     <input
                       type="text"
-                      value={formData.major}
-                      onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                      value={consultantForm.major}
+                      onChange={(e) => setConsultantField("major", e.target.value)}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="Finance, Business Administration, etc."
-                      required
                     />
+                    {formErrors.major && <p className="text-red-500 text-sm mt-1">{formErrors.major}</p>}
                   </div>
 
                   <div>
@@ -203,14 +196,14 @@ export default function AddConsultant() {
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="number"
-                        value={formData.yearsOfExperience}
-                        onChange={(e) => setFormData({ ...formData, yearsOfExperience: e.target.value })}
+                        value={consultantForm.yearsOfExperience}
+                        onChange={(e) => setConsultantField("yearsOfExperience", e.target.value)}
                         className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="5"
                         min="0"
-                        required
                       />
                     </div>
+                    {formErrors.yearsOfExperience && <p className="text-red-500 text-sm mt-1">{formErrors.yearsOfExperience}</p>}
                   </div>
 
                   <div>
@@ -221,14 +214,14 @@ export default function AddConsultant() {
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="number"
-                        value={formData.hourlyRate}
-                        onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                        value={consultantForm.hourlyRate}
+                        onChange={(e) => setConsultantField("hourlyRate", e.target.value)}
                         className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="150"
                         min="0"
-                        required
                       />
                     </div>
+                    {formErrors.hourlyRate && <p className="text-red-500 text-sm mt-1">{formErrors.hourlyRate}</p>}
                   </div>
                 </div>
               </div>
@@ -246,13 +239,13 @@ export default function AddConsultant() {
                       Education *
                     </label>
                     <textarea
-                      value={formData.education}
-                      onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                      value={consultantForm.education}
+                      onChange={(e) => setConsultantField("education", e.target.value)}
                       rows={3}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="MBA - Harvard Business School&#10;BSc Finance - MIT"
-                      required
                     />
+                    {formErrors.education && <p className="text-red-500 text-sm mt-1">{formErrors.education}</p>}
                   </div>
 
                   <div>
@@ -262,8 +255,8 @@ export default function AddConsultant() {
                     <div className="relative">
                       <Award className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                       <textarea
-                        value={formData.certifications}
-                        onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
+                        value={consultantForm.certifications}
+                        onChange={(e) => setConsultantField("certifications", e.target.value)}
                         rows={3}
                         className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                         placeholder="CFA (Chartered Financial Analyst)&#10;CFP (Certified Financial Planner)"
@@ -283,13 +276,13 @@ export default function AddConsultant() {
                       Bio / About *
                     </label>
                     <textarea
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      value={consultantForm.bio}
+                      onChange={(e) => setConsultantField("bio", e.target.value)}
                       rows={4}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="Brief description of the consultant's expertise and background..."
-                      required
                     />
+                    {formErrors.bio && <p className="text-red-500 text-sm mt-1">{formErrors.bio}</p>}
                   </div>
 
                   <div>
@@ -298,8 +291,8 @@ export default function AddConsultant() {
                     </label>
                     <input
                       type="url"
-                      value={formData.linkedIn}
-                      onChange={(e) => setFormData({ ...formData, linkedIn: e.target.value })}
+                      value={consultantForm.linkedIn}
+                      onChange={(e) => setConsultantField("linkedIn", e.target.value)}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       placeholder="https://linkedin.com/in/username"
                     />
@@ -314,9 +307,9 @@ export default function AddConsultant() {
                         <button
                           key={day}
                           type="button"
-                          onClick={() => handleAvailabilityToggle(day)}
+                          onClick={() => toggleAvailability(day)}
                           className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
-                            formData.availability.includes(day)
+                            consultantForm.availability.includes(day)
                               ? "border-teal-500 bg-teal-50 text-teal-700"
                               : "border-gray-300 hover:border-gray-400 text-gray-700"
                           }`}
@@ -325,6 +318,7 @@ export default function AddConsultant() {
                         </button>
                       ))}
                     </div>
+                    {formErrors.availability && <p className="text-red-500 text-sm mt-1">{formErrors.availability}</p>}
                   </div>
 
                   <div>
@@ -346,9 +340,10 @@ export default function AddConsultant() {
               <div className="flex items-center gap-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all shadow-lg"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transform hover:scale-[1.02] transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Consultant
+                  {isSubmitting ? "Adding..." : "Add Consultant"}
                 </button>
                 <button
                   type="button"

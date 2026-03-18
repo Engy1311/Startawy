@@ -1,10 +1,19 @@
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { FileText, Calendar, User, TrendingUp, Clock, Plus, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { FileText, Calendar, User, TrendingUp, Clock, Plus, Edit, Trash2, Check } from "lucide-react";
+import { useFollowUpStore } from "../../store/useFollowUpStore";
 
 export default function FollowUpPlans() {
-  const [showNewPlan, setShowNewPlan] = useState(false);
+  const {
+    formData,
+    showNewPlanModal,
+    showSuccessModal,
+    saving,
+    setFormField,
+    setShowNewPlanModal,
+    setShowSuccessModal,
+    createPlan,
+  } = useFollowUpStore();
 
   const followUpPlans = [
     {
@@ -75,6 +84,11 @@ export default function FollowUpPlans() {
     }
   };
 
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createPlan();
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar userRole="consultant" />
@@ -82,6 +96,27 @@ export default function FollowUpPlans() {
         <TopBar userRole="consultant" />
 
         <main className="p-6 lg:p-8">
+          {/* Success Popup */}
+          {showSuccessModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+              <div className="bg-white rounded-3xl p-10 max-w-md mx-4 shadow-2xl transform animate-slideUp">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 mb-6 animate-checkBounce shadow-lg">
+                    <Check className="h-10 w-10 text-white stroke-[3]" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3">Created!</h3>
+                  <p className="text-gray-600 text-lg">Follow-up plan created successfully</p>
+                  <button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="mt-8 w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 transition-colors shadow-lg"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
@@ -89,7 +124,7 @@ export default function FollowUpPlans() {
               <p className="text-gray-600">Manage ongoing client support and follow-up schedules</p>
             </div>
             <button 
-              onClick={() => setShowNewPlan(!showNewPlan)}
+              onClick={() => setShowNewPlanModal(!showNewPlanModal)}
               className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-semibold flex items-center gap-2"
             >
               <Plus className="w-5 h-5" />
@@ -134,21 +169,26 @@ export default function FollowUpPlans() {
           </div>
 
           {/* New Plan Form */}
-          {showNewPlan && (
+          {showNewPlanModal && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Create New Follow-Up Plan</h3>
               
-              <div className="space-y-4">
+              <form onSubmit={handleCreatePlan} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Client
                     </label>
-                    <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                      <option>Select client...</option>
-                      <option>John Doe - TechStart Inc.</option>
-                      <option>Sarah Miller - HealthTech Solutions</option>
-                      <option>Michael Brown - EcoStart</option>
+                    <select 
+                      value={formData.client}
+                      onChange={(e) => setFormField("client", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      required
+                    >
+                      <option value="">Select client...</option>
+                      <option value="John Doe - TechStart Inc.">John Doe - TechStart Inc.</option>
+                      <option value="Sarah Miller - HealthTech Solutions">Sarah Miller - HealthTech Solutions</option>
+                      <option value="Michael Brown - EcoStart">Michael Brown - EcoStart</option>
                     </select>
                   </div>
 
@@ -158,8 +198,11 @@ export default function FollowUpPlans() {
                     </label>
                     <input
                       type="text"
+                      value={formData.planTitle}
+                      onChange={(e) => setFormField("planTitle", e.target.value)}
                       placeholder="e.g., Q1 Financial Review & Strategy"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      required
                     />
                   </div>
                 </div>
@@ -170,8 +213,11 @@ export default function FollowUpPlans() {
                   </label>
                   <textarea
                     rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormField("description", e.target.value)}
                     placeholder="Describe the follow-up plan..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    required
                   />
                 </div>
 
@@ -182,7 +228,10 @@ export default function FollowUpPlans() {
                     </label>
                     <input
                       type="date"
+                      value={formData.startDate}
+                      onChange={(e) => setFormField("startDate", e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      required
                     />
                   </div>
 
@@ -192,7 +241,10 @@ export default function FollowUpPlans() {
                     </label>
                     <input
                       type="date"
+                      value={formData.endDate}
+                      onChange={(e) => setFormField("endDate", e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      required
                     />
                   </div>
 
@@ -200,27 +252,36 @@ export default function FollowUpPlans() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Frequency
                     </label>
-                    <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                      <option>Weekly</option>
-                      <option>Bi-weekly</option>
-                      <option>Monthly</option>
-                      <option>Quarterly</option>
+                    <select 
+                      value={formData.frequency}
+                      onChange={(e) => setFormField("frequency", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                      <option value="Weekly">Weekly</option>
+                      <option value="Bi-weekly">Bi-weekly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-3">
                   <button 
-                    onClick={() => setShowNewPlan(false)}
+                    type="button"
+                    onClick={() => setShowNewPlanModal(false)}
                     className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
                   >
                     Cancel
                   </button>
-                  <button className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold">
-                    Create Plan
+                  <button 
+                    type="submit"
+                    disabled={saving}
+                    className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold disabled:opacity-50"
+                  >
+                    {saving ? "Creating..." : "Create Plan"}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           )}
 
@@ -295,6 +356,24 @@ export default function FollowUpPlans() {
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes checkBounce {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.5s ease-out;
+        }
+        .animate-checkBounce {
+          animation: checkBounce 0.5s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 }

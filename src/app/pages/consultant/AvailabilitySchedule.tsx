@@ -1,21 +1,25 @@
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { Clock, Plus, Edit, Trash2, Save, X } from "lucide-react";
-import { useState } from "react";
+import { useAvailabilityStore } from "../../store/useAvailabilityStore";
 
 export default function AvailabilitySchedule() {
-  const [showAddSlotModal, setShowAddSlotModal] = useState(false);
-  const [selectedDay, setSelectedDay] = useState("");
-  
-  const [schedule] = useState([
-    { day: "Monday", slots: [{ id: 1, time: "9:00 AM - 11:00 AM" }, { id: 2, time: "2:00 PM - 5:00 PM" }], enabled: true },
-    { day: "Tuesday", slots: [{ id: 3, time: "9:00 AM - 12:00 PM" }, { id: 4, time: "1:00 PM - 5:00 PM" }], enabled: true },
-    { day: "Wednesday", slots: [{ id: 5, time: "9:00 AM - 11:00 AM" }, { id: 6, time: "3:00 PM - 6:00 PM" }], enabled: true },
-    { day: "Thursday", slots: [{ id: 7, time: "10:00 AM - 12:00 PM" }, { id: 8, time: "2:00 PM - 5:00 PM" }], enabled: true },
-    { day: "Friday", slots: [{ id: 9, time: "9:00 AM - 1:00 PM" }], enabled: true },
-    { day: "Saturday", slots: [], enabled: false },
-    { day: "Sunday", slots: [], enabled: false },
-  ]);
+  const {
+    schedule,
+    showAddSlotModal,
+    selectedDay,
+    startTime,
+    endTime,
+    isSaving,
+    setStartTime,
+    setEndTime,
+    setShowAddSlotModal,
+    setSelectedDay,
+    toggleDay,
+    addSlot,
+    deleteSlot,
+    saveSchedule,
+  } = useAvailabilityStore();
 
   const handleAddSlot = (day: string) => {
     setSelectedDay(day);
@@ -59,7 +63,7 @@ export default function AvailabilitySchedule() {
                 <Clock className="w-6 h-6 text-blue-600" />
                 <p className="text-sm text-gray-600">Hours/Week</p>
               </div>
-              <p className="text-3xl font-bold text-gray-900">~35</p>
+              <p className="text-3xl font-bold text-gray-900">~{totalSlots * 2}</p>
             </div>
           </div>
 
@@ -76,7 +80,12 @@ export default function AvailabilitySchedule() {
                   <div className="flex items-center gap-4">
                     <h3 className="text-lg font-bold text-gray-900">{day.day}</h3>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" checked={day.enabled} readOnly />
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={day.enabled} 
+                        onChange={() => toggleDay(day.day)} 
+                      />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
                       <span className="ms-3 text-sm font-medium text-gray-600">
                         {day.enabled ? "Available" : "Unavailable"}
@@ -109,7 +118,10 @@ export default function AvailabilitySchedule() {
                           <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => deleteSlot(day.day, slot.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -130,9 +142,17 @@ export default function AvailabilitySchedule() {
 
           {/* Save Button */}
           <div className="mt-8 flex justify-end">
-            <button className="px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold flex items-center gap-2">
-              <Save className="w-5 h-5" />
-              Save Schedule
+            <button 
+              onClick={saveSchedule}
+              disabled={isSaving}
+              className="px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold flex items-center gap-2 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <Save className="w-5 h-5" />
+              )}
+              {isSaving ? "Saving..." : "Save Schedule"}
             </button>
           </div>
         </main>
@@ -167,6 +187,8 @@ export default function AvailabilitySchedule() {
                 </label>
                 <input
                   type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
@@ -177,6 +199,8 @@ export default function AvailabilitySchedule() {
                 </label>
                 <input
                   type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
@@ -188,7 +212,10 @@ export default function AvailabilitySchedule() {
                 >
                   Cancel
                 </button>
-                <button className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold">
+                <button 
+                  onClick={() => addSlot(selectedDay)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md font-semibold"
+                >
                   Add Slot
                 </button>
               </div>

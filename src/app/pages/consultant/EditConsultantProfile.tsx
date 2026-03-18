@@ -1,72 +1,71 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
 import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Check, Lock, Trash2 } from "lucide-react";
+import { useConsultantProfileStore } from "../../store/useConsultantProfileStore";
 
 export default function EditConsultantProfile() {
   const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "Sarah Johnson",
-    email: "sarah.johnson@example.com",
-    phone: "+1 (555) 987-6543",
-    location: "San Francisco, CA",
-    company: "Financial Advisors Inc.",
-    position: "Senior Financial Consultant",
-    bio: "Experienced financial consultant with 10+ years in fintech industry.",
-  });
+  const {
+    formData,
+    formErrors,
+    passwordData,
+    passwordErrors,
+    isSaving: saving,
+    showSuccess,
+    successMessage,
+    showPasswordModal,
+    showDeleteModal,
+    setFormData,
+    setPasswordData,
+    setShowSuccess,
+    setShowPasswordModal,
+    setShowDeleteModal,
+    submitProfile,
+    submitPassword,
+    deleteAccount,
+    resetPasswordForm,
+  } = useConsultantProfileStore();
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  useEffect(() => {
+    if (showSuccess && successMessage === "Your changes have been saved") {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+        navigate("/consultant/profile");
+      }, 2000);
+      return () => clearTimeout(timer);
+    } else if (showSuccess) {
+      const timer = setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess, successMessage, setShowSuccess, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setSaving(false);
-    setShowSuccess(true);
-    setSuccessMessage("Your changes have been saved");
-
-    setTimeout(() => {
-      setShowSuccess(false);
-      navigate("/consultant/profile");
-    }, 2000);
+    await submitProfile();
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setSaving(false);
-    setShowPasswordModal(false);
-    setShowSuccess(true);
-    setSuccessMessage("Password updated successfully");
-
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 2000);
+    const success = await submitPassword();
+    if (success) {
+      resetPasswordForm();
+    } else {
+      alert("Passwords do not match!");
+    }
   };
 
-  const handleDeleteAccount = async () => {
-    setShowDeleteModal(false);
+  const handleDeleteAccountAction = async () => {
+    await deleteAccount();
     navigate("/login");
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar userRole="consultant" />
       
       <div className="flex-1 flex flex-col">
         <TopBar userRole="consultant" />
@@ -102,10 +101,13 @@ export default function EditConsultantProfile() {
                     <input
                       type="password"
                       value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      onChange={(e) => setPasswordData({ currentPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.currentPassword ? "border-red-500" : "border-gray-300"
+                      }`}
                       required
                     />
+                    {passwordErrors.currentPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.currentPassword}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -114,10 +116,13 @@ export default function EditConsultantProfile() {
                     <input
                       type="password"
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      onChange={(e) => setPasswordData({ newPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.newPassword ? "border-red-500" : "border-gray-300"
+                      }`}
                       required
                     />
+                    {passwordErrors.newPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.newPassword}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -126,10 +131,13 @@ export default function EditConsultantProfile() {
                     <input
                       type="password"
                       value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                      onChange={(e) => setPasswordData({ confirmPassword: e.target.value })}
+                      className={`block w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        passwordErrors.confirmPassword ? "border-red-500" : "border-gray-300"
+                      }`}
                       required
                     />
+                    {passwordErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.confirmPassword}</p>}
                   </div>
                   <div className="flex gap-3 pt-4">
                     <button
@@ -166,7 +174,7 @@ export default function EditConsultantProfile() {
                   </p>
                   <div className="flex gap-3">
                     <button
-                      onClick={handleDeleteAccount}
+                      onClick={handleDeleteAccountAction}
                       className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-lg font-semibold"
                     >
                       Yes, Delete
@@ -210,11 +218,13 @@ export default function EditConsultantProfile() {
                     <input
                       type="text"
                       value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      required
+                      onChange={(e) => setFormData({ fullName: e.target.value })}
+                      className={`block w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        formErrors.fullName ? "border-red-500" : "border-gray-300"
+                      }`}
                     />
                   </div>
+                  {formErrors.fullName && <p className="text-red-500 text-xs mt-1">{formErrors.fullName}</p>}
                 </div>
 
                 <div>
@@ -228,11 +238,13 @@ export default function EditConsultantProfile() {
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                      required
+                      onChange={(e) => setFormData({ email: e.target.value })}
+                      className={`block w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                        formErrors.email ? "border-red-500" : "border-gray-300"
+                      }`}
                     />
                   </div>
+                  {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                 </div>
 
                 <div>
@@ -246,7 +258,7 @@ export default function EditConsultantProfile() {
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => setFormData({ phone: e.target.value })}
                       className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     />
                   </div>
@@ -263,7 +275,7 @@ export default function EditConsultantProfile() {
                     <input
                       type="text"
                       value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      onChange={(e) => setFormData({ location: e.target.value })}
                       className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     />
                   </div>
@@ -281,7 +293,7 @@ export default function EditConsultantProfile() {
                       <input
                         type="text"
                         value={formData.company}
-                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                        onChange={(e) => setFormData({ company: e.target.value })}
                         className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
@@ -293,7 +305,7 @@ export default function EditConsultantProfile() {
                     <input
                       type="text"
                       value={formData.position}
-                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                      onChange={(e) => setFormData({ position: e.target.value })}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     />
                   </div>
@@ -305,7 +317,7 @@ export default function EditConsultantProfile() {
                   </label>
                   <textarea
                     value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    onChange={(e) => setFormData({ bio: e.target.value })}
                     rows={4}
                     className="block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
                   />

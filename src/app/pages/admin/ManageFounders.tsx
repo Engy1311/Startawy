@@ -1,68 +1,38 @@
 import { Sidebar } from "../../components/Sidebar";
 import { TopBar } from "../../components/TopBar";
-import { Search, Filter, Edit, Trash2, Eye, UserX, UserCheck } from "lucide-react";
+import { Search, Filter, Edit, Trash2, Eye, UserX, UserCheck, CheckCircle, X } from "lucide-react";
 import { useState } from "react";
+import { useFounderStore } from "../../store/useFounderStore";
 
 export default function ManageFounders() {
   const [searchTerm, setSearchTerm] = useState("");
+  
+  const {
+    founders,
+    selectedFounder,
+    showViewModal,
+    showEditModal,
+    showDeleteModal,
+    showSuccessModal,
+    successMessage,
+    formData,
+    formErrors,
+    openViewModal,
+    openEditModal,
+    openDeleteModal,
+    closeModals,
+    closeSuccessModal,
+    setFormField,
+    toggleStatus,
+    deleteFounder,
+    saveFounder
+  } = useFounderStore();
 
-  const founders = [
-    {
-      id: 1,
-      name: "Ahmed Hassan",
-      email: "ahmed@techstart.com",
-      company: "TechStart Inc.",
-      plan: "Premium",
-      status: "Active",
-      joinedDate: "Jan 15, 2026",
-      sessions: 12,
-      revenue: "$299",
-    },
-    {
-      id: 2,
-      name: "Omar Ali",
-      email: "omar@healthtech.com",
-      company: "HealthTech Solutions",
-      plan: "Basic",
-      status: "Active",
-      joinedDate: "Dec 10, 2025",
-      sessions: 8,
-      revenue: "$99",
-    },
-    {
-      id: 3,
-      name: "Layla Ahmed",
-      email: "layla@fashion.com",
-      company: "Fashion Hub",
-      plan: "Free Trial",
-      status: "Active",
-      joinedDate: "Feb 20, 2026",
-      sessions: 2,
-      revenue: "$0",
-    },
-    {
-      id: 4,
-      name: "Khaled Ibrahim",
-      email: "khaled@fooddelivery.com",
-      company: "Food Delivery Co.",
-      plan: "Basic",
-      status: "Inactive",
-      joinedDate: "Nov 5, 2025",
-      sessions: 5,
-      revenue: "$99",
-    },
-    {
-      id: 5,
-      name: "Mona Salem",
-      email: "mona@edutech.com",
-      company: "EduTech Platform",
-      plan: "Premium",
-      status: "Active",
-      joinedDate: "Jan 1, 2026",
-      sessions: 15,
-      revenue: "$299",
-    },
-  ];
+  const filteredFounders = founders.filter(founder => 
+    founder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    founder.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    founder.company.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -140,7 +110,7 @@ export default function ManageFounders() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {founders.map((founder) => (
+                  {filteredFounders.map((founder) => (
                     <tr key={founder.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div>
@@ -153,7 +123,7 @@ export default function ManageFounders() {
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
                             founder.plan === "Premium"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-amber-100 text-amber-700"
                               : founder.plan === "Basic"
                               ? "bg-teal-100 text-teal-700"
                               : "bg-gray-100 text-gray-700"
@@ -180,34 +150,256 @@ export default function ManageFounders() {
                       <td className="px-6 py-4 text-sm text-gray-600">{founder.joinedDate}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => openViewModal(founder)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="View"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => openEditModal(founder)}
+                            className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                            title="Edit"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
                           {founder.status === "Active" ? (
-                            <button className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
+                            <button 
+                              onClick={() => toggleStatus(founder.id)}
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                              title="Deactivate"
+                            >
                               <UserX className="w-4 h-4" />
                             </button>
                           ) : (
-                            <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                            <button 
+                              onClick={() => toggleStatus(founder.id)}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Activate"
+                            >
                               <UserCheck className="w-4 h-4" />
                             </button>
                           )}
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <button 
+                            onClick={() => openDeleteModal(founder)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
+                  {filteredFounders.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                        No founders found matching your search.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </main>
       </div>
+
+      {/* View Modal */}
+      {showViewModal && selectedFounder && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-900">Founder Details</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Name</p>
+                  <p className="font-semibold text-gray-900">{selectedFounder.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Company</p>
+                  <p className="font-semibold text-gray-900">{selectedFounder.company}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Email</p>
+                  <p className="font-medium text-gray-900">{selectedFounder.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Status</p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
+                    selectedFounder.status === "Active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                  }`}>
+                    {selectedFounder.status}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Plan</p>
+                  <p className="font-medium text-gray-900">{selectedFounder.plan}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Total Sessions</p>
+                  <p className="font-medium text-gray-900">{selectedFounder.sessions}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
+                  <p className="font-medium text-green-600">{selectedFounder.revenue}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Joined Date</p>
+                  <p className="font-medium text-gray-900">{selectedFounder.joinedDate}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button 
+                onClick={closeModals}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedFounder && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-900">Edit Founder</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input 
+                    type="text" 
+                    value={formData.name || ""} 
+                    onChange={(e) => setFormField("name", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                  <input 
+                    type="text" 
+                    value={formData.company || ""} 
+                    onChange={(e) => setFormField("company", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  {formErrors.company && <p className="text-red-500 text-sm mt-1">{formErrors.company}</p>}
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    value={formData.email || ""} 
+                    onChange={(e) => setFormField("email", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                  {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                  <select
+                    value={formData.plan || ""}
+                    onChange={(e) => setFormField("plan", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="Premium">Premium</option>
+                    <option value="Basic">Basic</option>
+                    <option value="Free Trial">Free Trial</option>
+                  </select>
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={formData.status || ""}
+                    onChange={(e) => setFormField("status", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button 
+                onClick={closeModals}
+                className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveFounder}
+                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedFounder && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Founder</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-gray-900">{selectedFounder.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button 
+                onClick={closeModals}
+                className="px-6 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 flex-1"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={deleteFounder}
+                className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors shadow-md flex-1"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden p-6 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Success!</h3>
+            <p className="text-gray-600 mb-6">{successMessage}</p>
+            <button 
+              onClick={closeSuccessModal}
+              className="w-full px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-medium rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-md"
+            >
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

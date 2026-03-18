@@ -1,7 +1,8 @@
 import { Link } from "react-router";
-import { Check } from "lucide-react";
+import { Check, CheckCircle, X } from "lucide-react";
 import { Sidebar } from "../components/Sidebar";
 import { TopBar } from "../components/TopBar";
+import { useState } from "react";
 
 const plans = [
   {
@@ -59,12 +60,14 @@ const plans = [
       "Custom financial modeling",
     ],
     notIncluded: [],
-    color: "purple",
-    gradient: "from-purple-500 to-purple-600",
+    color: "#FFD700",
+    gradient: "from-amber-500 to-amber-600",
   },
 ];
 
 export function Plans() {
+  const [showContactModal, setShowContactModal] = useState(false);
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -155,7 +158,10 @@ export function Plans() {
             <p className="text-gray-600 mb-6">
               Contact our sales team for enterprise solutions and custom pricing tailored to your needs.
             </p>
-            <button className="px-8 py-3 bg-white border-2 border-teal-500 text-teal-600 rounded-lg hover:bg-teal-50 transition-all font-semibold">
+            <button 
+              onClick={() => setShowContactModal(true)}
+              className="px-8 py-3 bg-white border-2 border-teal-500 text-teal-600 rounded-lg hover:bg-teal-50 transition-all font-semibold"
+            >
               Contact Sales
             </button>
           </div>
@@ -170,6 +176,25 @@ export function Plans() {
           </div>
         </main>
       </div>
+
+      {/* Contact Sales Success Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-teal-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Received!</h3>
+            <p className="text-gray-600 mb-6"> Our sales team will contact you shortly to discuss a custom plan for your startup.</p>
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="w-full px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg font-bold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
